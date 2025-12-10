@@ -1,0 +1,30 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+env/
+ENV/
+.vscode/
+.idea/
+/.mypy_cache/
+/.ruff_cache/
+*.sqlite3
+*.db
+dist/
+build/
+*.egg-info/
+Dockerfile
+*.log
+.DS_Store
+
+# Local env and caches
+config.env
+gps_cache.db
+.venv/
+
+# Ignore large or exported cache dumps
+cep_distance_cache.csv
+data/
