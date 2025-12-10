@@ -1,6 +1,16 @@
 # API_GPS
 
-Pequeno serviço HTTP em FastAPI para calcular distâncias/tempos entre dois CEPs (Portugal), usando scraping de `codigo-postal.pt` e o serviço TomTom.
+Serviço FastAPI para calcular distâncias e tempos entre dois Códigos Postais (CEP) em Portugal, integrando scraping de `codigo-postal.pt` e cálculos de rota via TomTom. Pode ser executado como serviço Windows (NSSM) ou em containerização Docker.
+
+## 📋 Funcionalidades
+
+- ✅ Endpoint `/ping` para verificação de saúde da API
+- ✅ Endpoint `/gps/distance` para cálculo de distância/tempo entre dois CEPs
+- ✅ Suporte a múltiplos tipos de veículos (ligeiro, pesado, van, truck)
+- ✅ Cache em memória (rápido) e cache persistente em SQLite
+- ✅ Integração com SAP via HTTP POST (JSON)
+- ✅ Logging estruturado para debug e monitorização
+- ✅ Testes automáticos e CI/CD com GitHub Actions
 
 ## Execução local (PowerShell)
 
@@ -98,3 +108,83 @@ C:/Ferramentas/API_GPS/.venv/Scripts/python.exe -m pytest -q
 ```
 
 Isto garante que as bibliotecas de teste (`pytest`, `httpx`, ...) são isoladas do sistema.
+
+## Integração com SAP (SM59)
+
+A API pode ser consumida diretamente pelo SAP R/3 ou S/4HANA através de um HTTP Destination (SM59).
+
+### Configurar SM59 no SAP
+
+| Campo | Valor |
+|-------|-------|
+| Tipo | G (HTTP) |
+| Host | IP/hostname da máquina com a API |
+| Porta | 8010 |
+| Path Prefix | `/` |
+
+### Exemplo de Chamada ABAP
+
+```abap
+DATA: lo_client    TYPE REF TO if_http_client,
+      lv_body      TYPE string,
+      lv_response  TYPE string.
+
+CONCATENATE
+  '{"cep_origem":"1000-001",'
+  '"cep_destino":"1000-002",'
+  '"vehicle_type":"truck"}'
+INTO lv_body.
+
+cl_http_client=>create_by_destination(
+  EXPORTING destination = 'Z_API_GPS'
+  IMPORTING client = lo_client
+).
+
+lo_client->request->set_method( 'POST' ).
+lo_client->request->set_header_field( name = 'Content-Type' value = 'application/json' ).
+lo_client->request->set_header_field( name = '~request_uri' value = '/gps/distance' ).
+lo_client->request->set_cdata( lv_body ).
+lo_client->send( ).
+lo_client->receive( ).
+
+lv_response = lo_client->response->get_cdata( ).
+WRITE: / lv_response.
+```
+
+## Deploy em Servidor Windows (com NSSM)
+
+Para executar como serviço Windows permanente:
+
+1. Instalar NSSM: https://nssm.cc/download
+2. Criar serviço:
+   ```powershell
+   nssm install API_GPS_DISTANCE
+   ```
+3. Configurar:
+   - Application Path: `C:\Users\<user>\AppData\Local\Programs\Python\Python312\python.exe`
+   - Startup Directory: `C:\Ferramentas\API_GPS`
+   - Arguments: `-m uvicorn main:app --host 0.0.0.0 --port 8010`
+4. Iniciar: `nssm start API_GPS_DISTANCE`
+5. Abrir firewall:
+   ```powershell
+   New-NetFirewallRule -DisplayName "API_GPS_8010" -Direction Inbound -Protocol TCP -LocalPort 8010 -Action Allow
+   ```
+
+## Variáveis de Ambiente
+
+Configure `TOMTOM_API_KEY` para usar a API do TomTom:
+
+```powershell
+$env:TOMTOM_API_KEY = "sua_chave_aqui"
+```
+
+Ou copie `env.sample` para `config.env` local (não commita segredos):
+
+```powershell
+Copy-Item env.sample config.env
+# Editar config.env e adicionar a chave real
+```
+
+## Swagger UI (Documentação Interativa)
+
+Aceda a `http://localhost:8010/docs` para explorar a API interactivamente.
