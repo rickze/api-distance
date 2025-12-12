@@ -24,7 +24,7 @@ param(
     [string]$ServiceName = "API_GPS_Distance"
 )
 
-function Ensure-Admin {
+function Test-Admin {
     $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $isAdmin) {
         Write-Error "This script must be run as Administrator. Exiting."
@@ -81,7 +81,7 @@ function Ensure-DirectoryAndCopy {
     robocopy $source $TargetDir /MIR /XD .git .github .vs  | Out-Null
 }
 
-function Create-VenvAndInstallDeps {
+function New-VenvAndInstallDeps {
     param(
         [string]$TargetDir
     )
@@ -99,7 +99,7 @@ function Create-VenvAndInstallDeps {
     & $venvPath\Scripts\python.exe -m pip install -r (Join-Path $TargetDir 'requirements.txt')
 }
 
-function Ensure-ConfigEnv {
+function Set-ConfigEnv {
     param(
         [string]$TargetDir,
         [string]$Key
@@ -142,15 +142,21 @@ function Ensure-NSSM {
     Write-Host "nssm not found. Attempting to install via winget..."
     try {
         winget install -e --id nssm.nssm
-        $nssmPath = (Get-Command nssm -ErrorAction SilentlyContinue)?.Source
-        if ($nssmPath) { Write-Host "nssm installed via winget: $nssmPath"; return $nssmPath }
+        $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+        if ($nssmCmd) { 
+            $nssmPath = $nssmCmd.Source
+            Write-Host "nssm installed via winget: $nssmPath"; return $nssmPath 
+        }
     } catch { Write-Warning "winget install nssm failed or not available." }
 
     Write-Host "Attempting Chocolatey install of nssm..."
     try {
         choco install nssm -y
-        $nssmPath = (Get-Command nssm -ErrorAction SilentlyContinue)?.Source
-        if ($nssmPath) { Write-Host "nssm installed via choco: $nssmPath"; return $nssmPath }
+        $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+        if ($nssmCmd) { 
+            $nssmPath = $nssmCmd.Source
+            Write-Host "nssm installed via choco: $nssmPath"; return $nssmPath 
+        }
     } catch { Write-Warning "choco install nssm failed or not available." }
 
     Write-Warning "Automatic nssm install failed. Please download nssm from https://nssm.cc/download and place nssm.exe on PATH (e.g., C:\Windows\System32)."
@@ -163,16 +169,17 @@ function Install-Service-With-NSSM {
         [string]$ServiceName,
         [int]$Port
     )
-    $nssmExe = (Get-Command nssm -ErrorAction SilentlyContinue)?.Source
-    if (-not $nssmExe) { Write-Error "nssm not found. Cannot create service."; return }
+    $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+    if (-not $nssmCmd) { Write-Error "nssm not found. Cannot create service."; return }
+    $nssmExe = $nssmCmd.Source
 
     $pythonExe = Join-Path $TargetDir '\venv\Scripts\python.exe'
     if (-not (Test-Path $pythonExe)) { $pythonExe = (Get-Command python).Source }
 
-    $args = "-m uvicorn main:app --host 0.0.0.0 --port $Port"
+    $arguments = "-m uvicorn main:app --host 0.0.0.0 --port $Port"
 
     Write-Host "Installing service $ServiceName using nssm"
-    & nssm install $ServiceName $pythonExe $args
+    & nssm install $ServiceName $pythonExe $arguments
 
     # Optionally configure working directory
     & nssm set $ServiceName AppDirectory $TargetDir
@@ -193,14 +200,14 @@ function Open-FirewallPort {
 }
 
 # ----------------- Main -----------------
-Ensure-Admin
+Test-Admin
 
 $target = "C:\\APIs\\GPS_DISTANCE"
 Ensure-DirectoryAndCopy -TargetDir $target
 
 Install-PythonIfMissing
-Create-VenvAndInstallDeps -TargetDir $target
-Ensure-ConfigEnv -TargetDir $target -Key $TomTomKey
+New-VenvAndInstallDeps -TargetDir $target
+Set-ConfigEnv -TargetDir $target -Key $TomTomKey
 
 $nssm = Ensure-NSSM
 if ($nssm) {
