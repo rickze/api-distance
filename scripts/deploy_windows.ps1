@@ -66,7 +66,7 @@ function Install-PythonIfMissing {
     }
 }
 
-function Ensure-DirectoryAndCopy {
+function Copy-DirectoryAndFiles {
     param(
         [string]$TargetDir
     )
@@ -93,7 +93,6 @@ function New-VenvAndInstallDeps {
         Write-Host "Virtualenv already exists at $venvPath"
     }
 
-    $activate = Join-Path $venvPath 'Scripts\Activate.ps1'
     Write-Host "Installing runtime dependencies from requirements.txt"
     & $venvPath\Scripts\python.exe -m pip install --upgrade pip
     & $venvPath\Scripts\python.exe -m pip install -r (Join-Path $TargetDir 'requirements.txt')
@@ -130,11 +129,12 @@ function Set-ConfigEnv {
     }
 }
 
-function Ensure-NSSM {
+function Get-NSSM {
     # Try winget, choco, then manual fallback
     Write-Host "Checking for nssm..."
-    $nssmPath = (Get-Command nssm -ErrorAction SilentlyContinue)?.Source
-    if ($nssmPath) {
+    $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+    if ($nssmCmd) {
+        $nssmPath = $nssmCmd.Source
         Write-Host "nssm found at $nssmPath"
         return $nssmPath
     }
@@ -171,7 +171,6 @@ function Install-Service-With-NSSM {
     )
     $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
     if (-not $nssmCmd) { Write-Error "nssm not found. Cannot create service."; return }
-    $nssmExe = $nssmCmd.Source
 
     $pythonExe = Join-Path $TargetDir '\venv\Scripts\python.exe'
     if (-not (Test-Path $pythonExe)) { $pythonExe = (Get-Command python).Source }
@@ -203,13 +202,13 @@ function Open-FirewallPort {
 Test-Admin
 
 $target = "C:\\APIs\\GPS_DISTANCE"
-Ensure-DirectoryAndCopy -TargetDir $target
+Copy-DirectoryAndFiles -TargetDir $target
 
 Install-PythonIfMissing
 New-VenvAndInstallDeps -TargetDir $target
 Set-ConfigEnv -TargetDir $target -Key $TomTomKey
 
-$nssm = Ensure-NSSM
+$nssm = Get-NSSM
 if ($nssm) {
     Install-Service-With-NSSM -TargetDir $target -ServiceName $ServiceName -Port $ServicePort
 } else {
