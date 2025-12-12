@@ -186,6 +186,12 @@ function Install-Service-With-NSSM {
     # Configure restart on failure
     & nssm set $ServiceName AppRestartDelay 5000
 
+    # Set environment variable for the service
+    if ($env:TOMTOM_API_KEY) {
+        & nssm set $ServiceName AppEnvironmentExtra "TOMTOM_API_KEY=$env:TOMTOM_API_KEY"
+        Write-Host "Set TOMTOM_API_KEY in service environment"
+    }
+
     Write-Host "Service installed. Setting recovery options and starting service."
     Start-Service -Name $ServiceName -ErrorAction SilentlyContinue
 }
