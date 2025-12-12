@@ -24,7 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Se quiseres, podes manter a leitura da env var e pôr um fallback
-API_KEY_TOMTOM = os.getenv("TOMTOM_API_KEY") or "A_TUA_CHAVE_TOMTOM_AQUI"
+API_KEY_TOMTOM = os.getenv("TOMTOM_API_KEY")
 if not API_KEY_TOMTOM:
     raise RuntimeError("TomTom API key not configured")
 

@@ -109,6 +109,21 @@ C:/Ferramentas/API_GPS/.venv/Scripts/python.exe -m pytest -q
 
 Isto garante que as bibliotecas de teste (`pytest`, `httpx`, ...) são isoladas do sistema.
 
+## Correr Testes
+
+Para facilitar, usa o script PowerShell incluído:
+
+```powershell
+.\run_tests.ps1
+```
+
+Ou manualmente:
+
+```powershell
+$env:PYTHONPATH = "."
+pytest -v
+```
+
 ## Integração com SAP (SM59)
 
 A API pode ser consumida diretamente pelo SAP R/3 ou S/4HANA através de um HTTP Destination (SM59).
