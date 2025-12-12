@@ -194,6 +194,8 @@ def calculate_route_tomtom(
                 route_cache[key] = (distance_km, time_minutes)
                 logger.info("[ROUTE CACHE STORE] %s -> %s km, %s min", key, distance_km, time_minutes)
                 return distance_km, time_minutes
+        else:
+            logger.error("TomTom API returned status %s: %s", r.status_code, r.text[:200])
     except Exception as e:
         logger.exception("Erro ao chamar TomTom: %s", e)
     route_cache[key] = (None, None)
