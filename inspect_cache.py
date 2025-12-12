@@ -3,10 +3,11 @@ import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).with_name("gps_cache.db")  # ficheiro na mesma pasta do main.py
-# DB_PATH = Path(r"C:\APIs\GPS_DISTANCE\data\gps_cache.db") #
+# DB_PATH = Path(r"C:\APIs\GPS_DISTANCE\data\gps_cache.db")
+
 
 def init_db():
-    #DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # cria pasta se não existir
+    # DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # cria pasta se não existir
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("""
@@ -26,6 +27,7 @@ def init_db():
     """)
     conn.commit()
     conn.close()
+
 
 def get_from_cache(cep_origem: str, cep_destino: str, vehicle_type: str):
     conn = sqlite3.connect(DB_PATH)
