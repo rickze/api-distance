@@ -75,13 +75,23 @@ pip 24.x.x
 
 ### Passo 2.1: Criar Diretório da API
 
+Criar o diretório base onde a API ficará instalada:
+
 ```powershell
 New-Item -ItemType Directory -Path "C:\APIs\GPS_DISTANCE" -Force
 ```
 
+---
+
 ### Passo 2.2: Copiar Ficheiros do Projeto
 
-Copia todos os ficheiros do repositório para `C:\APIs\GPS_DISTANCE`:
+Copiar todos os ficheiros do repositório para:
+
+```
+C:\APIs\GPS_DISTANCE\
+```
+
+Estrutura recomendada:
 
 ```
 C:\APIs\GPS_DISTANCE\
@@ -96,9 +106,51 @@ C:\APIs\GPS_DISTANCE\
     └── test_ping.py
 ```
 
-### Passo 2.3: Instalar Dependências
+---
 
-Abre PowerShell como Administrador e executa:
+### Passo 2.3: Configuração da Execution Policy do PowerShell
+
+Para ativar o ambiente virtual Python (`.\venv\Scripts\Activate.ps1`), é necessário garantir que o PowerShell permite a execução de scripts locais.
+
+Caso contrário, poderá surgir o erro:
+
+> running scripts is disabled on this system.
+
+#### 2.3.1 Verificar a Execution Policy atual
+
+```powershell
+Get-ExecutionPolicy -List
+```
+
+#### 2.3.2 Opção recomendada (por utilizador): RemoteSigned
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Permite scripts locais mas mantém segurança para scripts da internet.
+
+#### 2.3.3 Opção temporária (válida apenas para a sessão atual)
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Não altera a configuração do sistema — ideal para testes rápidos.
+
+#### 2.3.4 Opção global (não recomendada)
+
+```powershell
+Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned
+```
+
+Aplicar apenas em ambientes controlados e com aprovação da equipa de segurança.
+
+---
+
+### Passo 2.4: Criar Ambiente Virtual e Instalar Dependências
+
+> ⚠ **Executar em PowerShell como Administrador**
 
 ```powershell
 cd C:\APIs\GPS_DISTANCE
@@ -114,23 +166,39 @@ pip install -r requirements.txt
 ```
 
 **Dependências instaladas:**
-- `fastapi`
-- `uvicorn`
-- `requests`
+- fastapi
+- uvicorn
+- requests
 
-### Passo 2.4: Teste Rápido (Opcional)
+(O ficheiro `requirements-dev.txt` contém dependências para testes e desenvolvimento.)
+
+---
+
+### Passo 2.5: Teste Rápido da API (Opcional)
+
+Com o ambiente virtual ativado:
 
 ```powershell
-# Com venv activado
 uvicorn main:app --host 127.0.0.1 --port 8010
+```
 
-# Noutro PowerShell, testa
+Noutro PowerShell, testar o endpoint de saúde:
+
+```powershell
 Invoke-WebRequest http://127.0.0.1:8010/ping
 ```
 
-Deverá retornar: `{"status":"ok"}`
+Resposta esperada:
 
-Interrompe com `Ctrl+C`.
+```json
+{"status": "ok"}
+```
+
+Parar o servidor com:
+
+```
+Ctrl + C
+```
 
 ---
 
